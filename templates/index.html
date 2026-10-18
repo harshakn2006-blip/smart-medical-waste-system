@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}MedWaste Smart | Home{% endblock %}
+{% block content %}
+<section class="hero">
+  <div class="hero-copy">
+    <span class="eyebrow">SMART HEALTHCARE OPERATIONS</span>
+    <h1>Safer segregation.<br><span class="text-green">Smarter collection.</span></h1>
+    <p>A simple web workspace for recording biomedical waste, checking color-coded segregation guidance, and tracking collection requests from one dashboard.</p>
+    <div class="hero-actions"><a class="button button-primary" href="{{ url_for('login') }}">Sign in to workspace <span>→</span></a><a class="button button-secondary" href="{{ url_for('login') }}">Explore demo</a></div>
+    <div class="trust-line"><span class="dot"></span> Role-based access · Rule-based guide · Collection history</div>
+  </div>
+  <div class="hero-visual">
+    <div class="visual-top"><span class="live-dot"></span> WASTE OPERATIONS <span class="visual-date">LIVE DEMO</span></div>
+    <div class="visual-title">Facility overview</div>
+    <div class="visual-metrics"><div><small>Segregation</small><strong>4 <em>categories</em></strong></div><div><small>Collection flow</small><strong>Tracked <em>status</em></strong></div></div>
+    <div class="bin-row"><div class="bin yellow"><span>Y</span><b>Yellow</b><small>Specified waste</small></div><div class="bin red"><span>R</span><b>Red</b><small>Recyclable plastics</small></div><div class="bin white"><span>W</span><b>White</b><small>Specified sharps</small></div><div class="bin blue"><span>B</span><b>Blue</b><small>Specified glass</small></div></div>
+    <div class="visual-note">Unknown items are flagged for trained staff review — never guessed.</div>
+  </div>
+</section>
+<section class="feature-grid">
+  <article class="feature-card"><div class="feature-icon mint">⌕</div><h3>Smart segregation guide</h3><p>Search an item to see a cautious category suggestion and handling note.</p></article>
+  <article class="feature-card"><div class="feature-icon lilac">▤</div><h3>Waste records</h3><p>Log department, quantity, category, and review flags.</p></article>
+  <article class="feature-card"><div class="feature-icon peach">↗</div><h3>Collection tracking</h3><p>Create pickup requests and follow their progress.</p></article>
+  <article class="feature-card"><div class="feature-icon sky">▦</div><h3>Role-based dashboard</h3><p>Different views for staff, collection staff, and administrators.</p></article>
+</section>
+<div class="disclaimer"><strong>Important:</strong> This educational demo is not a regulatory certification or clinical decision tool. Confirm waste categories and procedures against current Indian Biomedical Waste Management Rules, amendments, and your facility's approved SOP.</div>
+{% endblock %}

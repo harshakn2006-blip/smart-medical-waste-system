@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}MedWaste Smart{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script defer src="{{ url_for('static', filename='app.js') }}"></script>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="{{ url_for('index') }}"><span class="brand-icon">✚</span> MedWaste <span class="brand-light">Smart</span></a>
+  {% if current_user %}
+  <nav class="nav">
+    <a href="{{ url_for('dashboard') }}">Dashboard</a>
+    <a href="{{ url_for('segregation') }}">Segregation guide</a>
+    {% if current_role in ['staff','admin'] %}<a href="{{ url_for('waste_records') }}">Waste records</a>{% endif %}
+    <a href="{{ url_for('collections') }}">Collections</a>
+    {% if current_role == 'admin' %}<a href="{{ url_for('users') }}">Users</a>{% endif %}
+  </nav>
+  <div class="user-area"><span class="role-pill">{{ current_role }}</span><span class="username">{{ current_user }}</span>
+    <form method="post" action="{{ url_for('logout') }}"><button class="button button-ghost button-small" type="submit">Sign out</button></form>
+  </div>
+  {% endif %}
+</header>
+<main class="container">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash-stack">
+      {% for category, message in messages %}<div class="flash flash-{{ category }}">{{ message }}</div>{% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+  {% block content %}{% endblock %}
+</main>
+<footer class="footer">Student demonstration project · Verify all disposal decisions against current rules and facility SOPs.</footer>
+</body>
+</html>

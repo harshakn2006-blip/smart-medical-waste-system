@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Sign in | MedWaste Smart{% endblock %}
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-aside"><span class="eyebrow">WELCOME BACK</span><h1>Better records.<br>Safer routines.</h1><p>Sign in to record waste, review segregation suggestions, and manage collection activity.</p><div class="auth-check">✓ Secure password hashing</div><div class="auth-check">✓ Role-based permissions</div><div class="auth-check">✓ Local SQLite database</div></div>
+  <div class="auth-card"><div class="section-kicker">WORKSPACE ACCESS</div><h2>Sign in</h2><p class="muted">Use your assigned account details.</p>
+    <form method="post" class="form-stack">
+      <label>Username<input name="username" autocomplete="username" required placeholder="Enter username"></label>
+      <label>Password<input name="password" type="password" autocomplete="current-password" required placeholder="Enter password"></label>
+      <button class="button button-primary button-full" type="submit">Sign in <span>→</span></button>
+    </form>
+    <div class="demo-login"><strong>Demo accounts (local project only)</strong><p>Admin: <code>admin</code> / <code>Admin123!</code></p><p>Staff: <code>staff</code> / <code>Staff123!</code></p><p>Collector: <code>collector</code> / <code>Collector123!</code></p><small>Change these before any real deployment.</small></div>
+  </div>
+</div>
+{% endblock %}

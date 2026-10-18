@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Collections | MedWaste Smart{% endblock %}
+{% block content %}
+<div class="page-heading"><div><div class="section-kicker">PICKUP WORKFLOW</div><h1>Collection tracking</h1><p class="muted">Create requests and track pickup progress across the facility.</p></div></div>
+<div class="content-grid collection-grid">
+  <section class="panel form-panel"><div class="panel-heading"><div><h2>New collection request</h2><p class="muted">Request collection for a department or a recorded item.</p></div></div>
+    <form method="post" class="form-stack">
+      <label>Department / pickup location<input name="department" required maxlength="100" placeholder="e.g. Laboratory"></label>
+      <label>Link waste record (optional)<select name="waste_record_id"><option value="">No linked record</option>{% for r in records %}<option value="{{ r.id }}">#{{ r.id }} · {{ r.item_name }} — {{ r.department }} ({{ "%.2f"|format(r.quantity_kg) }} kg)</option>{% endfor %}</select></label>
+      <label>Pickup notes<textarea name="pickup_notes" rows="3" maxlength="500" placeholder="Collection timing, location details, etc."></textarea></label>
+      <button class="button button-primary button-full" type="submit">Create pickup request <span>→</span></button>
+    </form>
+  </section>
+  <section class="panel"><div class="panel-heading"><div><h2>Requests</h2><p class="muted">{{ requests|length }} request(s) visible to your role</p></div></div>
+    {% if requests %}<div class="request-list">{% for r in requests %}
+    <article class="request-card">
+      <div class="request-head"><div><span class="request-id">REQUEST #{{ r.id }}</span><h3>{{ r.department }}</h3></div><span class="status-badge status-{{ r.status|lower }}">{{ r.status }}</span></div>
+      <p class="request-notes">{{ r.pickup_notes or "No additional notes." }}</p>
+      <div class="request-meta"><span>Requested by <strong>{{ r.requester }}</strong></span><span>{{ r.requested_at[:16].replace('T',' ') }}</span></div>
+      <div class="request-meta"><span>Collector: <strong>{{ r.collector or "Not assigned" }}</strong></span><span>Updated {{ r.updated_at[:10] }}</span></div>
+      {% if current_role == 'admin' %}
+      <form method="post" action="{{ url_for('update_collection', request_id=r.id) }}" class="inline-update">
+        <label>Status<select name="status">{% for s in statuses %}<option value="{{ s }}" {% if s == r.status %}selected{% endif %}>{{ s }}</option>{% endfor %}</select></label>
+        <label>Assign collector<select name="assigned_to"><option value="">Unassigned</option>{% for c in collectors %}<option value="{{ c.id }}" {% if r.assigned_to == c.id %}selected{% endif %}>{{ c.username }}</option>{% endfor %}</select></label>
+        <button class="button button-secondary button-small" type="submit">Update</button>
+      </form>
+      {% elif current_role == 'collector' and r.status in ['Assigned','Collected'] and (r.assigned_to == none or r.assigned_to == session.get('user_id')) %}
+      <form method="post" action="{{ url_for('update_collection', request_id=r.id) }}" class="inline-update">
+        <label>Update status<select name="status">{% if r.status == 'Assigned' %}<option>Collected</option><option>Completed</option>{% else %}<option>Completed</option>{% endif %}</select></label>
+        <button class="button button-secondary button-small" type="submit">Save status</button>
+      </form>
+      {% endif %}
+    </article>{% endfor %}</div>{% else %}<div class="empty-state"><div class="empty-icon">↗</div><strong>No collection requests</strong><p>Create a request using the form.</p></div>{% endif %}
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,3 @@
+{% extends "base.html" %}
+{% block title %}Error {{ code }} | MedWaste Smart{% endblock %}
+{% block content %}<section class="empty-state error-page"><div class="empty-icon">!</div><h1>{{ code }}</h1><strong>{{ message }}</strong><p>Return to your dashboard or sign in with an authorized account.</p><a class="button button-primary" href="{{ url_for('dashboard') if current_user else url_for('index') }}">Go back</a></section>{% endblock %}

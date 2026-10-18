@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}User Management | MedWaste Smart{% endblock %}
+{% block content %}
+<div class="page-heading"><div><div class="section-kicker">ADMINISTRATION</div><h1>User management</h1><p class="muted">Create accounts and assign appropriate roles.</p></div></div>
+<div class="content-grid">
+<section class="panel form-panel"><div class="panel-heading"><div><h2>Create user</h2><p class="muted">Passwords are stored as hashes.</p></div></div>
+<form method="post" class="form-stack"><label>Username<input name="username" minlength="3" maxlength="80" required></label><label>Temporary password<input name="password" type="password" minlength="8" required><small class="muted">At least 8 characters.</small></label><label>Role<select name="role" required>{% for role in roles %}<option value="{{ role }}">{{ role|capitalize }}</option>{% endfor %}</select></label><button class="button button-primary button-full" type="submit">Create account →</button></form>
+</section>
+<section class="panel"><div class="panel-heading"><div><h2>Registered users</h2><p class="muted">{{ users|length }} account(s)</p></div></div><div class="table-wrap"><table><thead><tr><th>Username</th><th>Role</th><th>Created</th></tr></thead><tbody>{% for u in users %}<tr><td><strong>{{ u.username }}</strong></td><td><span class="role-pill">{{ u.role }}</span></td><td>{{ u.created_at[:10] }}</td></tr>{% endfor %}</tbody></table></div></section>
+</div>
+{% endblock %}

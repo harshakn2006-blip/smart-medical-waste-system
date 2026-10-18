@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Segregation Guide | MedWaste Smart{% endblock %}
+{% block content %}
+<div class="page-heading"><div><div class="section-kicker">RULE-BASED ASSISTANT</div><h1>Smart segregation guide</h1><p class="muted">Search an item to get a cautious suggestion from the demo lookup.</p></div></div>
+<section class="panel guide-search">
+  <form method="post" class="search-form"><label for="item_name">Waste item name</label><div class="search-row"><input id="item_name" name="item_name" value="{{ item }}" placeholder="e.g. contaminated IV tubing" required><button class="button button-primary" type="submit">Check item <span>→</span></button></div><small class="muted">Use a specific item description. Mixed, chemical, pharmaceutical, cytotoxic, liquid, or unclear waste must be reviewed by trained staff.</small></form>
+</section>
+{% if result %}
+<section class="result-card {% if result.review_required %}result-review{% else %}result-match{% endif %}">
+  <div class="result-top"><div><span class="section-kicker">SUGGESTION RESULT</span><h2>{{ result.category }}</h2></div><span class="result-icon">{% if result.review_required %}⚠{% else %}✓{% endif %}</span></div>
+  <div class="result-container"><span class="muted">Container guidance</span><strong>{{ result.container }}</strong></div>
+  <p>{{ result.guidance }}</p>
+  {% if result.review_required %}<div class="warning-note"><strong>Trained staff review required.</strong> Do not use this suggestion as an authorization to dispose of the item. Follow your facility's approved SOP and current applicable rules.</div>{% else %}<div class="success-note">This is a preliminary rule-based match. Verify the exact waste subtype and facility SOP before segregation.</div>{% endif %}
+  {% if current_role in ['staff','admin'] %}<a class="button button-primary" href="{{ url_for('waste_records') }}">Record this waste →</a>{% endif %}
+</section>
+{% endif %}
+<section class="guide-categories">
+  <article class="guide-card guide-yellow"><div class="guide-color"></div><div><h3>Yellow</h3><p>Examples include specified anatomical, soiled, certain pharmaceutical and laboratory wastes. Exact subtype matters.</p></div></article>
+  <article class="guide-card guide-red"><div class="guide-color"></div><div><h3>Red</h3><p>Specified contaminated recyclable plastic waste, subject to the applicable rules and treatment requirements.</p></div></article>
+  <article class="guide-card guide-white"><div class="guide-color"></div><div><h3>White (translucent)</h3><p>Specified waste sharps including metals; use the prescribed puncture-proof, leak-proof and tamper-proof container.</p></div></article>
+  <article class="guide-card guide-blue"><div class="guide-color"></div><div><h3>Blue</h3><p>Specified contaminated glassware and metallic implants, as described in the applicable schedule.</p></div></article>
+</section>
+<div class="disclaimer"><strong>Conservative by design:</strong> The lookup is not exhaustive. If an item is unknown, mixed, chemically contaminated, cytotoxic, radioactive, or otherwise ambiguous, the system flags it for trained staff review instead of guessing.</div>
+{% endblock %}
