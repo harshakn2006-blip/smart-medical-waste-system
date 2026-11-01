@@ -1,3 +1,6 @@
+
 Flask>=3.0,<4.0
 gunicorn
-
+qrcode[pil]
+reportlab
+openpyxl

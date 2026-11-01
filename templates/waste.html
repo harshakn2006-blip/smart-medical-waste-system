@@ -13,7 +13,29 @@
     <div class="mini-note">Category is suggested by the rule-based guide. Ambiguous items are saved as “Needs trained staff review”.</div>
   </section>
   <section class="panel"><div class="panel-heading"><div><h2>Waste register</h2><p class="muted">{{ records|length }} record(s)</p></div></div>
-    {% if records %}<div class="table-wrap"><table><thead><tr><th>Item / department</th><th>Quantity</th><th>Category</th><th>Review</th></tr></thead><tbody>{% for r in records %}<tr><td><strong>{{ r.item_name }}</strong><small>{{ r.department }} · {{ r.created_at[:16].replace('T',' ') }}</small><small>Added by {{ r.username }}</small></td><td>{{ "%.2f"|format(r.quantity_kg) }} kg</td><td><span class="category-label">{{ r.category }}</span><small>{{ r.container }}</small></td><td>{% if r.review_required %}<span class="review-tag">Needs review</span>{% else %}<span class="ok-tag">Verify SOP</span>{% endif %}</td></tr>{% endfor %}</tbody></table></div>{% else %}<div class="empty-state"><div class="empty-icon">▤</div><strong>Your register is empty</strong><p>Use the form to add the first waste entry.</p></div>{% endif %}
+    {% if records %}<div class="table-wrap"><table><thead><tr>
+    <th>Item / department</th>
+    <th>Quantity</th>
+    <th>Category</th>
+    <th>Review</th>
+    <th>QR Tracking</th>
+</tr></thead><tbody>{% for r in records %}<tr><td><strong>{{ r.item_name }}</strong><small>{{ r.department }} · {{ r.created_at[:16].replace('T',' ') }}</small><small>Added by {{ r.username }}</small></td><td>{{ "%.2f"|format(r.quantity_kg) }} kg</td><td><span class="category-label">{{ r.category }}</span><small>{{ r.container }}</small></td><td>{% if r.review_required %}<span class="review-tag"<td>
+    {% if r.review_required %}
+        <span class="review-tag">Needs review</span>
+    {% else %}
+        <span class="ok-tag">Verify SOP</span>
+    {% endif %}
+</td>
+<td>
+    <a href="{{ url_for('waste_qr', record_id=r.id) }}" target="_blank">
+        <img
+            src="{{ url_for('waste_qr', record_id=r.id) }}"
+            alt="QR Code for waste record {{ r.id }}"
+            width="90"
+            height="90">
+    </a>
+    <small>Record #{{ r.id }}</small>
+</td>>Needs review</span>{% else %}<span class="ok-tag">Verify SOP</span>{% endif %}</td></tr>{% endfor %}</tbody></table></div>{% else %}<div class="empty-state"><div class="empty-icon">▤</div><strong>Your register is empty</strong><p>Use the form to add the first waste entry.</p></div>{% endif %}
   </section>
 </div>
 {% endblock %}

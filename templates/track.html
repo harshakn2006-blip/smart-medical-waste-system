@@ -1,0 +1,37 @@
+
+{% extends "base.html" %}
+{% block title %}Waste Tracking | MedWaste Smart{% endblock %}
+
+{% block content %}
+<div class="page-heading">
+    <div>
+        <div class="section-kicker">QR CODE TRACKING</div>
+        <h1>Waste tracking details</h1>
+        <p class="muted">Biomedical waste record information.</p>
+    </div>
+</div>
+
+<section class="panel">
+    <h2>Record #{{ record.id }}</h2>
+
+    <p><strong>Waste item:</strong> {{ record.item_name }}</p>
+    <p><strong>Department:</strong> {{ record.department }}</p>
+    <p><strong>Quantity:</strong> {{ "%.2f"|format(record.quantity_kg) }} kg</p>
+    <p><strong>Category:</strong> {{ record.category }}</p>
+    <p><strong>Container:</strong> {{ record.container }}</p>
+    <p><strong>Added by:</strong> {{ record.username }}</p>
+    <p><strong>Date:</strong> {{ record.created_at }}</p>
+
+    {% if record.review_required %}
+    <p class="review-tag">Needs trained staff review</p>
+    {% else %}
+    <p class="ok-tag">Verify facility SOP</p>
+    {% endif %}
+
+    <p><strong>Guidance:</strong> {{ record.guidance }}</p>
+
+    <a href="{{ url_for('waste_records') }}" class="button button-primary">
+        Back to Waste Records
+    </a>
+</section>
+{% endblock %}

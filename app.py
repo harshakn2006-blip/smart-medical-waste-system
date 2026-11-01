@@ -2,8 +2,10 @@ import os
 import sqlite3
 from functools import wraps
 from datetime import datetime
-from flask import Flask, render_template, request, redirect, url_for, session, flash, g, abort
+from flask import Flask, render_template, request, redirect, url_for, session, flash, g, abort, send_file
 from werkzeug.security import generate_password_hash, check_password_hash
+from io import BytesIO
+import qrcode
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 DATABASE = os.path.join(BASE_DIR, "medical_waste.db")
@@ -297,6 +299,54 @@ def waste_records():
     """).fetchall()
     return render_template("waste.html", records=rows)
 
+
+@app.route("/waste/<int:record_id>/qr")
+@login_required
+def waste_qr(record_id):
+    record = get_db().execute(
+        "SELECT id FROM waste_records WHERE id = ?",
+        (record_id,)
+    ).fetchone()
+
+    if not record:
+        abort(404)
+
+    tracking_url = url_for(
+        "track_waste",
+        record_id=record_id,
+        _external=True
+    )
+
+    qr = qrcode.QRCode(
+        version=1,
+        box_size=10,
+        border=4
+    )
+    qr.add_data(tracking_url)
+    qr.make(fit=True)
+
+    image = qr.make_image(fill_color="black", back_color="white")
+    image_bytes = BytesIO()
+    image.save(image_bytes, format="PNG")
+    image_bytes.seek(0)
+
+    return send_file(image_bytes, mimetype="image/png")
+
+
+@app.route("/track/waste/<int:record_id>")
+@login_required
+def track_waste(record_id):
+    record = get_db().execute("""
+        SELECT w.*, u.username
+        FROM waste_records w
+        JOIN users u ON u.id = w.created_by
+        WHERE w.id = ?
+    """, (record_id,)).fetchone()
+
+    if not record:
+        abort(404)
+
+    return render_template("track.html", record=record)
 
 @app.route("/collections", methods=["GET", "POST"])
 @login_required
