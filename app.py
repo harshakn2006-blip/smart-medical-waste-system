@@ -6,6 +6,13 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from werkzeug.security import generate_password_hash, check_password_hash
 from io import BytesIO
 import qrcode
+from ai_classifier import predict_waste_category
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import A4, landscape
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 DATABASE = os.path.join(BASE_DIR, "medical_waste.db")
@@ -157,7 +164,44 @@ def roles_required(*roles):
 
 
 
+
 def classify_waste(item_name):
+    """Use existing safety rules first; AI is only an additional suggestion."""
+
+    normalized = " ".join(item_name.lower().strip().split())
+    matches = []
+
+    for rule in WASTE_GUIDE:
+        if any(term in normalized for term in rule["terms"]):
+            matches.append(rule)
+
+    categories = {m["category"] for m in matches}
+
+    # Existing rule-based classification remains the priority.
+    if len(categories) == 1:
+        match = matches[0]
+        return {
+            "category": match["category"],
+            "container": match["container"],
+            "guidance": match["guidance"],
+            "review_required": 1 if match["confidence"] != "Likely match; verify" else 0
+        }
+
+    # If rules are uncertain, ask the AI for an additional suggestion.
+    ai_result = predict_waste_category(item_name)
+
+    return {
+        "category": "Needs trained staff review",
+        "container": "Do not guess; isolate safely and follow facility SOP",
+        "guidance": (
+            "AI demo suggestion: " + ai_result["category"] +
+            " (" + str(ai_result["confidence"]) + "% confidence). " +
+            "This is not a disposal decision. Ask trained staff to verify "
+            "the item using current facility rules and SOP."
+        ),
+        "review_required": 1
+    }
+
     """Return a cautious rule-based suggestion; unknown/ambiguous items need review."""
     normalized = " ".join(item_name.lower().strip().split())
     matches = []
@@ -219,35 +263,88 @@ def logout():
     return redirect(url_for("index"))
 
 
+
 @app.route("/dashboard")
 @login_required
 def dashboard():
     db = get_db()
+
+    # Overall waste statistics
     totals = db.execute("""
-        SELECT COUNT(*) AS records, COALESCE(SUM(quantity_kg),0) AS kg,
-               SUM(CASE WHEN review_required=1 THEN 1 ELSE 0 END) AS reviews
+        SELECT COUNT(*) AS records,
+               COALESCE(SUM(quantity_kg), 0) AS kg,
+               COALESCE(SUM(CASE WHEN review_required=1 THEN 1 ELSE 0 END), 0) AS reviews
         FROM waste_records
     """).fetchone()
+
+    # Collection status
     statuses = db.execute("""
-        SELECT status, COUNT(*) AS count FROM collection_requests GROUP BY status
+        SELECT status, COUNT(*) AS count
+        FROM collection_requests
+        GROUP BY status
     """).fetchall()
+
+    # Category-wise waste
     categories = db.execute("""
-        SELECT category, ROUND(SUM(quantity_kg),2) AS kg
-        FROM waste_records GROUP BY category ORDER BY kg DESC
+        SELECT category, ROUND(SUM(quantity_kg), 2) AS kg
+        FROM waste_records
+        GROUP BY category
+        ORDER BY kg DESC
     """).fetchall()
+
+    # Department-wise waste analytics
+    department_stats = db.execute("""
+        SELECT department,
+               COUNT(*) AS records,
+               ROUND(SUM(quantity_kg), 2) AS kg
+        FROM waste_records
+        GROUP BY department
+        ORDER BY kg DESC
+    """).fetchall()
+
+    # Monthly waste generation
+    monthly_stats = db.execute("""
+        SELECT SUBSTR(created_at, 1, 7) AS month,
+               ROUND(SUM(quantity_kg), 2) AS kg
+        FROM waste_records
+        GROUP BY SUBSTR(created_at, 1, 7)
+        ORDER BY month DESC
+        LIMIT 6
+    """).fetchall()
+
+    monthly_stats = list(reversed(monthly_stats))
+
+    # Recent waste entries
     recent = db.execute("""
-        SELECT w.*, u.username FROM waste_records w
-        JOIN users u ON u.id=w.created_by ORDER BY w.id DESC LIMIT 8
+        SELECT w.*, u.username
+        FROM waste_records w
+        JOIN users u ON u.id = w.created_by
+        ORDER BY w.id DESC
+        LIMIT 8
     """).fetchall()
+
+    # Recent collection requests
     requests = db.execute("""
-        SELECT c.*, u.username AS requester, a.username AS collector
+        SELECT c.*, u.username AS requester,
+               a.username AS collector
         FROM collection_requests c
-        JOIN users u ON u.id=c.requested_by
-        LEFT JOIN users a ON a.id=c.assigned_to
-        ORDER BY c.id DESC LIMIT 8
+        JOIN users u ON u.id = c.requested_by
+        LEFT JOIN users a ON a.id = c.assigned_to
+        ORDER BY c.id DESC
+        LIMIT 8
     """).fetchall()
-    return render_template("dashboard.html", totals=totals, statuses=statuses,
-                           categories=categories, recent=recent, requests=requests)
+
+    return render_template(
+        "dashboard.html",
+        totals=totals,
+        statuses=statuses,
+        categories=categories,
+        department_stats=department_stats,
+        monthly_stats=monthly_stats,
+        recent=recent,
+        requests=requests
+    )
+
 
 
 @app.route("/segregation", methods=["GET", "POST"])
@@ -476,6 +573,154 @@ def forbidden(_error):
 def not_found(_error):
     return render_template("error.html", code=404, message="The requested page was not found."), 404
 
+
+
+# ==========================================
+# PDF WASTE REPORT
+# ==========================================
+
+@app.route("/reports/pdf")
+@roles_required("admin")
+def download_pdf_report():
+    db = get_db()
+
+    records = db.execute("""
+        SELECT item_name, department, quantity_kg, category,
+               created_at, review_required
+        FROM waste_records
+        ORDER BY id DESC
+    """).fetchall()
+
+    output = BytesIO()
+
+    document = SimpleDocTemplate(
+        output,
+        pagesize=landscape(A4)
+    )
+
+    styles = getSampleStyleSheet()
+    elements = []
+
+    elements.append(Paragraph(
+        "Smart Medical Waste Management Report",
+        styles["Title"]
+    ))
+
+    elements.append(Spacer(1, 15))
+
+    table_data = [[
+        "Item",
+        "Department",
+        "Quantity (kg)",
+        "Category",
+        "Date",
+        "Review"
+    ]]
+
+    for record in records:
+        table_data.append([
+            record["item_name"],
+            record["department"],
+            str(record["quantity_kg"]),
+            record["category"],
+            str(record["created_at"])[:10],
+            "Required" if record["review_required"] else "Verify SOP"
+        ])
+
+    report_table = Table(table_data, repeatRows=1)
+
+    report_table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#173B57")),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+        ("PADDING", (0, 0), (-1, -1), 7),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE")
+    ]))
+
+    elements.append(report_table)
+    document.build(elements)
+
+    output.seek(0)
+
+    return send_file(
+        output,
+        as_attachment=True,
+        download_name="medical_waste_report.pdf",
+        mimetype="application/pdf"
+    )
+
+
+# ==========================================
+# EXCEL WASTE REPORT
+# ==========================================
+
+@app.route("/reports/excel")
+@roles_required("admin")
+def download_excel_report():
+    db = get_db()
+
+    records = db.execute("""
+        SELECT item_name, department, quantity_kg, category,
+               created_at, review_required
+        FROM waste_records
+        ORDER BY id DESC
+    """).fetchall()
+
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = "Waste Report"
+
+    headers = [
+        "Item",
+        "Department",
+        "Quantity (kg)",
+        "Category",
+        "Date",
+        "Review"
+    ]
+
+    sheet.append(headers)
+
+    for cell in sheet[1]:
+        cell.font = Font(bold=True, color="FFFFFF")
+        cell.fill = PatternFill(
+            start_color="173B57",
+            end_color="173B57",
+            fill_type="solid"
+        )
+
+    for record in records:
+        sheet.append([
+            record["item_name"],
+            record["department"],
+            record["quantity_kg"],
+            record["category"],
+            str(record["created_at"])[:10],
+            "Required" if record["review_required"] else "Verify SOP"
+        ])
+
+    # Adjust column widths
+    for column in sheet.columns:
+        max_length = 0
+        column_letter = column[0].column_letter
+
+        for cell in column:
+            if cell.value is not None:
+                max_length = max(max_length, len(str(cell.value)))
+
+        sheet.column_dimensions[column_letter].width = max_length + 4
+
+    output = BytesIO()
+    workbook.save(output)
+    output.seek(0)
+
+    return send_file(
+        output,
+        as_attachment=True,
+        download_name="medical_waste_report.xlsx",
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
 
 if __name__ == "__main__":
     init_db()

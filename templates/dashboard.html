@@ -2,6 +2,19 @@
 {% block title %}Dashboard | MedWaste Smart{% endblock %}
 {% block content %}
 <div class="page-heading"><div><div class="section-kicker">OVERVIEW</div><h1>Good day, {{ current_user }}.</h1><p class="muted">Here is the current waste and collection snapshot.</p></div><span class="date-chip">● {{ current_role|capitalize }} workspace</span></div>
+{% if current_role == 'admin' %}
+<div style="display:flex; gap:12px; margin:20px 0;">
+    <a href="{{ url_for('download_pdf_report') }}"
+       class="button button-primary">
+        Download PDF Report
+    </a>
+
+    <a href="{{ url_for('download_excel_report') }}"
+       class="button button-primary">
+        Download Excel Report
+    </a>
+</div>
+{% endif %}
 <div class="stats-grid">
   <div class="stat-card"><div class="stat-label">Waste records</div><div class="stat-number">{{ totals.records or 0 }}</div><div class="stat-foot">Total logged entries</div><div class="stat-symbol mint">▤</div></div>
   <div class="stat-card"><div class="stat-label">Waste quantity</div><div class="stat-number">{{ "%.2f"|format(totals.kg or 0) }} <small>kg</small></div><div class="stat-foot">Across recorded items</div><div class="stat-symbol sky">◉</div></div>
