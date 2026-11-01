@@ -722,6 +722,13 @@ def download_excel_report():
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
+
+@app.route("/about")
+@login_required
+def about():
+    return render_template("about.html")
+
 if __name__ == "__main__":
+    
     init_db()
     app.run(host="0.0.0.0", port=5000, debug=False)
