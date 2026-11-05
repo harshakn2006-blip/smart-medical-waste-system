@@ -10,9 +10,16 @@
     <h2>Smart Medical Waste Management System</h2>
 
     <p>
-        The Smart Medical Waste Management System is a web-based
-        application designed to improve biomedical waste management
-        in healthcare facilities.
+        MedWaste Smart is a smart web-based medical waste management
+        application designed to improve biomedical waste segregation,
+        identification, collection, tracking and monitoring in
+        healthcare facilities.
+    </p>
+
+    <p>
+        The system combines rule-based classification, AI-powered
+        image identification and digital tracking to make medical
+        waste management more organized and efficient.
     </p>
 </section>
 
@@ -20,26 +27,96 @@
     <h2>Project Objectives</h2>
     <ul>
         <li>Improve biomedical waste segregation.</li>
-        <li>Assist with AI-based waste classification.</li>
-        <li>Track waste using QR codes.</li>
+        <li>Assist staff with AI-based waste classification.</li>
+        <li>Identify visible medical waste items using uploaded images.</li>
+        <li>Maintain a history of AI image identification results.</li>
+        <li>Track waste records using QR codes.</li>
         <li>Manage waste collection efficiently.</li>
         <li>Generate reports and analytics.</li>
+        <li>Improve monitoring through role-based access.</li>
     </ul>
 </section>
 
 <section class="card">
     <h2>Key Features</h2>
     <ul>
-        <li>AI Waste Classification</li>
-        <li>QR Code Tracking</li>
-        <li>Waste Collection Management</li>
-        <li>Analytics Dashboard</li>
-        <li>PDF and Excel Reports</li>
+        <li>
+            <strong>AI Waste Classification:</strong>
+            Provides classification suggestions for medical waste items.
+        </li>
+
+        <li>
+            <strong>AI Image Identification:</strong>
+            Uses Gemini AI to identify visible medical waste items
+            from uploaded images.
+        </li>
+
+        <li>
+            <strong>AI Identification History:</strong>
+            Automatically stores previous image identification
+            results for future reference.
+        </li>
+
+        <li>
+            <strong>QR Code Tracking:</strong>
+            Generates QR codes to track individual waste records.
+        </li>
+
+        <li>
+            <strong>Waste Collection Management:</strong>
+            Allows staff to create collection requests and
+            collectors to manage collection activities.
+        </li>
+
+        <li>
+            <strong>Analytics Dashboard:</strong>
+            Displays waste statistics, collection status,
+            department details and identification history.
+        </li>
+
+        <li>
+            <strong>PDF and Excel Reports:</strong>
+            Generates downloadable reports for waste records
+            and management activities.
+        </li>
+
+        <li>
+            <strong>Role-Based Login:</strong>
+            Provides separate access for staff, collectors
+            and administrators.
+        </li>
     </ul>
 </section>
 
 <section class="card">
+    <h2>Technologies Used</h2>
+    <ul>
+        <li>Python</li>
+        <li>Flask Framework</li>
+        <li>HTML, CSS and JavaScript</li>
+        <li>SQLite Database</li>
+        <li>Google Gemini AI API</li>
+        <li>QR Code Generation</li>
+        <li>ReportLab for PDF Reports</li>
+        <li>OpenPyXL for Excel Reports</li>
+    </ul>
+</section>
+
+<section class="card">
+    <h2>Safety and Reliability</h2>
+    <p>
+        AI image identification provides suggestions based on the
+        visible appearance of an item. It cannot determine whether
+        an item is contaminated or infectious. All biomedical waste
+        segregation decisions must be verified by trained staff
+        according to applicable biomedical waste regulations and
+        facility procedures.
+    </p>
+</section>
+
+<section class="card">
     <h2>Designed &amp; Developed by Harsha KN</h2>
+    <p>Smart Medical Waste Management System</p>
 </section>
 
 {% endblock %}

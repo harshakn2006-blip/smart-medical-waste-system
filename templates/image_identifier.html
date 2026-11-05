@@ -1,0 +1,67 @@
+
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>AI Medical Waste Image Identifier</h2>
+
+    <p>Upload an image to identify the visible object using AI.</p>
+
+    <div class="card p-4">
+        <form method="POST"
+              action="{{ url_for('image_identifier') }}"
+              enctype="multipart/form-data">
+
+            <label for="waste_image" class="form-label">
+                Select an image
+            </label>
+
+            <input
+                type="file"
+                name="waste_image"
+                id="waste_image"
+                class="form-control"
+                accept=".jpg,.jpeg,.png,.webp"
+                required
+            >
+
+            <button type="submit" class="btn btn-primary mt-3">
+                Identify Image
+            </button>
+        </form>
+
+        {% if identified_item %}
+    <hr>
+    <h4>AI Identification Result</h4>
+
+    <p><strong>Visible item:</strong> {{ identified_item }}</p>
+
+    <h4>Waste Classification Suggestion</h4>
+
+    <p>
+        <strong>Category:</strong>
+        {{ classification.category }}
+    </p>
+
+    <p>
+        <strong>Recommended container:</strong>
+        {{ classification.container }}
+    </p>
+
+    <p>
+        <strong>Safety guidance:</strong>
+        {{ classification.guidance }}
+    </p>
+
+    <div class="alert alert-warning">
+        AI suggestion only. Trained biomedical-waste staff
+        must verify the category and disposal procedure.
+    </div>
+{% endif %}
+
+        {% if error %}
+            <p class="text-danger mt-3">{{ error }}</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

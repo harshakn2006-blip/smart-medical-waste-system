@@ -1,0 +1,47 @@
+
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container mt-4">
+    <h2>AI Image Identification History</h2>
+    <p>Previously identified biomedical waste images.</p>
+
+    {% if history %}
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Visible Item</th>
+                    <th>Category</th>
+                    <th>Container</th>
+                    <th>Guidance</th>
+                    <th>Identified By</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for item in history %}
+                <tr>
+                    <td>{{ item.id }}</td>
+                    <td>{{ item.identified_item }}</td>
+                    <td>{{ item.category }}</td>
+                    <td>{{ item.container }}</td>
+                    <td>{{ item.guidance }}</td>
+                    <td>{{ item.username }}</td>
+                    <td>{{ item.identified_at }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        <div class="alert alert-info">
+            No image identification history available yet.
+        </div>
+    {% endif %}
+</div>
+
+{% endblock %}

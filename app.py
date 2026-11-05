@@ -7,6 +7,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from io import BytesIO
 import qrcode
 from ai_classifier import predict_waste_category
+from image_classifier import identify_waste_image
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
@@ -77,9 +78,11 @@ def close_db(_error=None):
         db.close()
 
 
+
 def init_db():
     db = sqlite3.connect(app.config["DATABASE"])
     db.execute("PRAGMA foreign_keys = ON")
+
     db.executescript("""
     CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -88,6 +91,7 @@ def init_db():
         role TEXT NOT NULL CHECK(role IN ('staff','collector','admin')),
         created_at TEXT NOT NULL
     );
+
     CREATE TABLE IF NOT EXISTS waste_records (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         item_name TEXT NOT NULL,
@@ -101,6 +105,7 @@ def init_db():
         created_at TEXT NOT NULL,
         FOREIGN KEY(created_by) REFERENCES users(id)
     );
+
     CREATE TABLE IF NOT EXISTS collection_requests (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         waste_record_id INTEGER,
@@ -112,25 +117,46 @@ def init_db():
         requested_by INTEGER NOT NULL,
         requested_at TEXT NOT NULL,
         updated_at TEXT NOT NULL,
-        FOREIGN KEY(waste_record_id) REFERENCES waste_records(id) ON DELETE SET NULL,
+        FOREIGN KEY(waste_record_id)
+            REFERENCES waste_records(id) ON DELETE SET NULL,
         FOREIGN KEY(assigned_to) REFERENCES users(id),
         FOREIGN KEY(requested_by) REFERENCES users(id)
     );
+
+    CREATE TABLE IF NOT EXISTS image_identification_history (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        identified_item TEXT NOT NULL,
+        category TEXT NOT NULL,
+        container TEXT NOT NULL,
+        guidance TEXT NOT NULL,
+        review_required INTEGER NOT NULL DEFAULT 1,
+        identified_by INTEGER NOT NULL,
+        identified_at TEXT NOT NULL,
+        FOREIGN KEY(identified_by) REFERENCES users(id)
+    );
     """)
-    # Seed demonstration accounts only when the users table is empty.
+
+    # Seed demonstration accounts only when users table is empty.
     count = db.execute("SELECT COUNT(*) FROM users").fetchone()[0]
+
     if count == 0:
         now = datetime.now().isoformat(timespec="seconds")
+
         demo_users = [
             ("admin", generate_password_hash("Admin123!"), "admin", now),
             ("staff", generate_password_hash("Staff123!"), "staff", now),
             ("collector", generate_password_hash("Collector123!"), "collector", now),
         ]
+
         db.executemany(
-            "INSERT INTO users (username,password_hash,role,created_at) VALUES (?,?,?,?)",
+            """
+            INSERT INTO users (username, password_hash, role, created_at)
+            VALUES (?, ?, ?, ?)
+            """,
             demo_users
         )
-        db.commit()
+
+    db.commit()
     db.close()
 
 
@@ -166,7 +192,7 @@ def roles_required(*roles):
 
 
 def classify_waste(item_name):
-    """Use existing safety rules first; AI is only an additional suggestion."""
+    """Use existing safety rules first; uncertain items need staff review."""
 
     normalized = " ".join(item_name.lower().strip().split())
     matches = []
@@ -177,52 +203,33 @@ def classify_waste(item_name):
 
     categories = {m["category"] for m in matches}
 
-    # Existing rule-based classification remains the priority.
+    # Use existing rules when one category is identified.
     if len(categories) == 1:
         match = matches[0]
+
         return {
             "category": match["category"],
             "container": match["container"],
             "guidance": match["guidance"],
-            "review_required": 1 if match["confidence"] != "Likely match; verify" else 0
+            "review_required": 1
         }
 
-    # If rules are uncertain, ask the AI for an additional suggestion.
-    ai_result = predict_waste_category(item_name)
+    # AI provides an additional suggestion, not a disposal decision.
+    try:
+        ai_result = predict_waste_category(item_name)
+        ai_message = (
+            "AI demo suggestion: "
+            + ai_result["category"]
+            + ". Ask trained staff to verify."
+        )
+    except Exception:
+        ai_message = "AI suggestion unavailable. Ask trained staff to verify."
 
     return {
         "category": "Needs trained staff review",
         "container": "Do not guess; isolate safely and follow facility SOP",
-        "guidance": (
-            "AI demo suggestion: " + ai_result["category"] +
-            " (" + str(ai_result["confidence"]) + "% confidence). " +
-            "This is not a disposal decision. Ask trained staff to verify "
-            "the item using current facility rules and SOP."
-        ),
+        "guidance": ai_message,
         "review_required": 1
-    }
-
-    """Return a cautious rule-based suggestion; unknown/ambiguous items need review."""
-    normalized = " ".join(item_name.lower().strip().split())
-    matches = []
-    for rule in WASTE_GUIDE:
-        if any(term in normalized for term in rule["terms"]):
-            matches.append(rule)
-    # If zero or multiple category matches, do not guess.
-    categories = {m["category"] for m in matches}
-    if len(categories) != 1:
-        return {
-            "category": "Needs trained staff review",
-            "container": "Do not guess; isolate safely and follow facility SOP",
-            "guidance": "The system could not confidently map this item to one category. Ask the facility's trained biomedical-waste officer and consult current rules/SOP.",
-            "review_required": 1
-        }
-    match = matches[0]
-    return {
-        "category": match["category"],
-        "container": match["container"],
-        "guidance": match["guidance"],
-        "review_required": 1 if match["confidence"] != "Likely match; verify" else 0
     }
 
 
@@ -269,7 +276,6 @@ def logout():
 def dashboard():
     db = get_db()
 
-    # Overall waste statistics
     totals = db.execute("""
         SELECT COUNT(*) AS records,
                COALESCE(SUM(quantity_kg), 0) AS kg,
@@ -277,14 +283,12 @@ def dashboard():
         FROM waste_records
     """).fetchone()
 
-    # Collection status
     statuses = db.execute("""
         SELECT status, COUNT(*) AS count
         FROM collection_requests
         GROUP BY status
     """).fetchall()
 
-    # Category-wise waste
     categories = db.execute("""
         SELECT category, ROUND(SUM(quantity_kg), 2) AS kg
         FROM waste_records
@@ -292,7 +296,6 @@ def dashboard():
         ORDER BY kg DESC
     """).fetchall()
 
-    # Department-wise waste analytics
     department_stats = db.execute("""
         SELECT department,
                COUNT(*) AS records,
@@ -302,7 +305,6 @@ def dashboard():
         ORDER BY kg DESC
     """).fetchall()
 
-    # Monthly waste generation
     monthly_stats = db.execute("""
         SELECT SUBSTR(created_at, 1, 7) AS month,
                ROUND(SUM(quantity_kg), 2) AS kg
@@ -314,7 +316,6 @@ def dashboard():
 
     monthly_stats = list(reversed(monthly_stats))
 
-    # Recent waste entries
     recent = db.execute("""
         SELECT w.*, u.username
         FROM waste_records w
@@ -323,7 +324,6 @@ def dashboard():
         LIMIT 8
     """).fetchall()
 
-    # Recent collection requests
     requests = db.execute("""
         SELECT c.*, u.username AS requester,
                a.username AS collector
@@ -334,6 +334,19 @@ def dashboard():
         LIMIT 8
     """).fetchall()
 
+    image_total = db.execute("""
+        SELECT COUNT(*)
+        FROM image_identification_history
+    """).fetchone()[0]
+
+    recent_images = db.execute("""
+        SELECT h.*, u.username
+        FROM image_identification_history h
+        JOIN users u ON u.id = h.identified_by
+        ORDER BY h.id DESC
+        LIMIT 5
+    """).fetchall()
+
     return render_template(
         "dashboard.html",
         totals=totals,
@@ -342,10 +355,10 @@ def dashboard():
         department_stats=department_stats,
         monthly_stats=monthly_stats,
         recent=recent,
-        requests=requests
+        requests=requests,
+        image_total=image_total,
+        recent_images=recent_images
     )
-
-
 
 @app.route("/segregation", methods=["GET", "POST"])
 @login_required
@@ -727,6 +740,113 @@ def download_excel_report():
 @login_required
 def about():
     return render_template("about.html")
+
+
+
+@app.route("/image-identifier", methods=["GET", "POST"])
+@login_required
+def image_identifier():
+    if request.method == "POST":
+        uploaded_file = request.files.get("waste_image")
+
+        if not uploaded_file or uploaded_file.filename == "":
+            return render_template(
+                "image_identifier.html",
+                error="Please select an image."
+            )
+
+        image_bytes = uploaded_file.read()
+
+        if len(image_bytes) > 5 * 1024 * 1024:
+            return render_template(
+                "image_identifier.html",
+                error="Image must be smaller than 5 MB."
+            )
+
+        try:
+            from PIL import Image
+
+            image = Image.open(BytesIO(image_bytes))
+            image.verify()
+            image = Image.open(BytesIO(image_bytes))
+
+            mime_types = {
+                "JPEG": "image/jpeg",
+                "PNG": "image/png",
+                "WEBP": "image/webp"
+            }
+
+            mime_type = mime_types.get(image.format)
+
+            if not mime_type:
+                raise ValueError(
+                    "Only JPG, PNG and WEBP images are allowed."
+                )
+
+            result = identify_waste_image(image_bytes, mime_type)
+            classification = classify_waste(result["item_name"])
+
+            db = get_db()
+
+            db.execute("""
+                INSERT INTO image_identification_history (
+                    identified_item,
+                    category,
+                    container,
+                    guidance,
+                    review_required,
+                    identified_by,
+                    identified_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, (
+                result["item_name"],
+                classification["category"],
+                classification["container"],
+                classification["guidance"],
+                classification["review_required"],
+                session["user_id"],
+                datetime.now().isoformat(timespec="seconds")
+            ))
+
+            db.commit()
+
+            return render_template(
+                "image_identifier.html",
+                identified_item=result["item_name"],
+                classification=classification
+            )
+
+        except Exception as e:
+            print("IMAGE IDENTIFIER ERROR:", repr(e))
+
+            return render_template(
+                "image_identifier.html",
+                error="Image identification failed. Check the VS Code terminal."
+            )
+
+    return render_template("image_identifier.html")
+
+@app.route("/image-history")
+@login_required
+def image_history():
+    db = get_db()
+
+    history = db.execute("""
+        SELECT
+            image_identification_history.*,
+            users.username
+        FROM image_identification_history
+        JOIN users
+        ON image_identification_history.identified_by = users.id
+        ORDER BY image_identification_history.id DESC
+    """).fetchall()
+
+    return render_template(
+        "image_history.html",
+        history=history
+    )
+
 
 if __name__ == "__main__":
     

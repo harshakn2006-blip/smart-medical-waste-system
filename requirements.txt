@@ -6,3 +6,5 @@ reportlab
 openpyxl
 scikit-learn
 pandas
+Pillow
+requests
