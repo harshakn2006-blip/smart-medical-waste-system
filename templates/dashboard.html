@@ -4,15 +4,18 @@
 
 {% block content %}
 
+<!-- Dashboard Heading -->
 <div class="page-heading">
     <div>
         <div class="section-kicker">OVERVIEW</div>
         <h1>Good day, {{ current_user }}.</h1>
         <p class="muted">Here is the current waste and collection snapshot.</p>
     </div>
+
     <span class="date-chip">● {{ current_role|capitalize }} workspace</span>
 </div>
 
+<!-- PDF and Excel Reports -->
 {% if current_role == 'admin' %}
 <div style="display:flex; gap:12px; margin:20px 0;">
     <a href="{{ url_for('download_pdf_report') }}" class="button button-primary">
@@ -63,6 +66,7 @@
 <!-- Waste and Collection Dashboard -->
 <div class="dashboard-grid">
 
+    <!-- Waste by Category -->
     <section class="panel">
         <div class="panel-heading">
             <div>
@@ -116,6 +120,7 @@
         {% endif %}
     </section>
 
+    <!-- Collection Status -->
     <section class="panel">
         <div class="panel-heading">
             <div>
@@ -156,6 +161,7 @@
 <!-- Recent Waste and Pickup Information -->
 <div class="dashboard-grid lower-grid">
 
+    <!-- Recent Waste Entries -->
     <section class="panel">
         <div class="panel-heading">
             <div>
@@ -206,6 +212,7 @@
         {% endif %}
     </section>
 
+    <!-- Recent Pickups -->
     <section class="panel">
         <div class="panel-heading">
             <div>
@@ -294,5 +301,23 @@
     </p>
 
 </div>
+
+<!-- Advanced Analytics - ONLY AT THE BOTTOM -->
+{% if current_role == 'admin' %}
+<div class="card" style="margin-top:24px;">
+
+    <h2>Advanced Analytics</h2>
+
+    <p>
+        View detailed waste statistics, monthly trends,
+        department analysis and collection performance.
+    </p>
+
+    <a href="{{ url_for('analytics') }}" class="button">
+        View Advanced Analytics
+    </a>
+
+</div>
+{% endif %}
 
 {% endblock %}

@@ -79,10 +79,11 @@ class HybridRow(dict):
 
 
 def hybrid_row_factory(cursor):
+
     if cursor.description is None:
-        columns = []
-    else:
-        columns = [column.name for column in cursor.description]
+        return lambda values: values
+
+    columns = [column.name for column in cursor.description]
 
     def make_row(values):
         return HybridRow(columns, values)
@@ -426,12 +427,15 @@ def dashboard():
     """).fetchall()
 
     monthly_stats = db.execute("""
-        SELECT SUBSTR(created_at, 1, 7) AS month,
-        ROUND(CAST(SUM(quantity_kg) AS NUMERIC), 2) AS kg        FROM waste_records
-        GROUP BY SUBSTR(created_at, 1, 7)
-        ORDER BY month DESC
-        LIMIT 6
-    """).fetchall()
+    SELECT
+        SUBSTR(created_at, 1, 7) AS month,
+        ROUND(CAST(SUM(quantity_kg) AS NUMERIC), 2) AS kg
+    FROM waste_records
+    GROUP BY SUBSTR(created_at, 1, 7)
+    ORDER BY month DESC
+    LIMIT 6
+""").fetchall()
+   
 
     monthly_stats = list(reversed(monthly_stats))
 
@@ -478,6 +482,64 @@ def dashboard():
         image_total=image_total,
         recent_images=recent_images
     )
+@app.route("/analytics")
+@login_required
+def analytics():
+
+    if session.get("role") != "admin":
+        abort(403)
+
+    db = get_db()
+
+    totals = db.execute("""
+        SELECT COUNT(*) AS records,
+               COALESCE(SUM(quantity_kg), 0) AS total_kg,
+               COALESCE(SUM(
+                   CASE WHEN review_required = 1 THEN 1 ELSE 0 END
+               ), 0) AS reviews
+        FROM waste_records
+    """).fetchone()
+
+    categories = db.execute("""
+        SELECT category,
+               ROUND(CAST(SUM(quantity_kg) AS NUMERIC), 2) AS kg
+        FROM waste_records
+        GROUP BY category
+        ORDER BY kg DESC
+    """).fetchall()
+
+    departments = db.execute("""
+        SELECT department,
+               COUNT(*) AS records,
+               ROUND(CAST(SUM(quantity_kg) AS NUMERIC), 2) AS kg
+        FROM waste_records
+        GROUP BY department
+        ORDER BY kg DESC
+    """).fetchall()
+
+    monthly = db.execute("""
+        SELECT SUBSTR(created_at, 1, 7) AS month,
+               ROUND(CAST(SUM(quantity_kg) AS NUMERIC), 2) AS kg
+        FROM waste_records
+        GROUP BY SUBSTR(created_at, 1, 7)
+        ORDER BY month
+    """).fetchall()
+
+    statuses = db.execute("""
+        SELECT status, COUNT(*) AS count
+        FROM collection_requests
+        GROUP BY status
+    """).fetchall()
+
+    return render_template(
+        "analytics.html",
+        totals=totals,
+        categories=categories,
+        departments=departments,
+        monthly=monthly,
+        statuses=statuses
+    )
+
 
 @app.route("/segregation", methods=["GET", "POST"])
 @login_required
@@ -970,7 +1032,7 @@ def image_history():
 if USE_POSTGRES:
     init_postgres_db()
 else:
-    init_sqlite_db()
+    init_sqlite_db()()
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=False)

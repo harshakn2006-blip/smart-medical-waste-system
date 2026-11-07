@@ -36,11 +36,9 @@
     {% endif %}
 
     <a href="{{ url_for('collections') }}">Collections</a>
-
-    {% if current_role == 'admin' %}
-    <a href="{{ url_for('users') }}">Users</a>
-    {% endif %}
-
+{% if current_role == 'admin' %}
+<a href="{{ url_for('users') }}">Users</a>
+{% endif %}
     <a href="{{ url_for('about') }}">About Project</a>
 </nav>
 

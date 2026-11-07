@@ -1,122 +1,53 @@
 
 {% extends "base.html" %}
 
-{% block title %}About Project | MedWaste Smart{% endblock %}
+{% block title %}About | MedWaste Smart{% endblock %}
 
 {% block content %}
 
-<section class="card">
-    <h1>About Project</h1>
-    <h2>Smart Medical Waste Management System</h2>
+<h1>About MedWaste Smart</h1>
 
-    <p>
-        MedWaste Smart is a smart web-based medical waste management
-        application designed to improve biomedical waste segregation,
-        identification, collection, tracking and monitoring in
-        healthcare facilities.
-    </p>
+<p>
+    MedWaste Smart is a web-based biomedical waste management system that helps healthcare facilities classify, identify, track and manage medical waste efficiently using AI and digital technology.
+</p>
 
-    <p>
-        The system combines rule-based classification, AI-powered
-        image identification and digital tracking to make medical
-        waste management more organized and efficient.
-    </p>
-</section>
+<h2>Project Objectives</h2>
+<ul>
+    <li>Improve biomedical waste segregation.</li>
+    <li>Support AI-based waste identification.</li>
+    <li>Track waste records using QR codes.</li>
+    <li>Manage collection activities.</li>
+    <li>Monitor performance through analytics and reports.</li>
+</ul>
 
-<section class="card">
-    <h2>Project Objectives</h2>
-    <ul>
-        <li>Improve biomedical waste segregation.</li>
-        <li>Assist staff with AI-based waste classification.</li>
-        <li>Identify visible medical waste items using uploaded images.</li>
-        <li>Maintain a history of AI image identification results.</li>
-        <li>Track waste records using QR codes.</li>
-        <li>Manage waste collection efficiently.</li>
-        <li>Generate reports and analytics.</li>
-        <li>Improve monitoring through role-based access.</li>
-    </ul>
-</section>
+<h2>Key Features</h2>
+<ul>
+    <li><strong>AI Classification:</strong> Suggests suitable waste categories.</li>
+    <li><strong>Image Identification:</strong> Uses Gemini AI to identify visible waste items.</li>
+    <li><strong>QR Tracking:</strong> Tracks individual waste records.</li>
+    <li><strong>Collection Management:</strong> Organizes pickup requests and collection status.</li>
+    <li><strong>Analytics:</strong> Displays waste statistics and trends.</li>
+    <li><strong>Reports:</strong> Generates PDF and Excel reports.</li>
+    <li><strong>Role-Based Access:</strong> Supports staff, collectors and administrators.</li>
+</ul>
 
-<section class="card">
-    <h2>Key Features</h2>
-    <ul>
-        <li>
-            <strong>AI Waste Classification:</strong>
-            Provides classification suggestions for medical waste items.
-        </li>
+<h2>Technology Stack</h2>
+<p>
+    Python · Flask · PostgreSQL · HTML · CSS · JavaScript · Google Gemini AI · QR Code · ReportLab · OpenPyXL
+</p>
 
-        <li>
-            <strong>AI Image Identification:</strong>
-            Uses Gemini AI to identify visible medical waste items
-            from uploaded images.
-        </li>
+<h2>Safety Note</h2>
+<p>
+    AI results are suggestions based on visible appearance. They cannot confirm contamination or infection. Final segregation must be verified by trained staff according to applicable biomedical waste regulations and facility SOPs.
+</p>
 
-        <li>
-            <strong>AI Identification History:</strong>
-            Automatically stores previous image identification
-            results for future reference.
-        </li>
+<h2>Advanced Analytics</h2>
+<p>
+    Explore waste statistics, monthly trends and collection performance.
+</p>
 
-        <li>
-            <strong>QR Code Tracking:</strong>
-            Generates QR codes to track individual waste records.
-        </li>
+<p><strong>Designed &amp; Developed by Harsha KN</strong></p>
 
-        <li>
-            <strong>Waste Collection Management:</strong>
-            Allows staff to create collection requests and
-            collectors to manage collection activities.
-        </li>
-
-        <li>
-            <strong>Analytics Dashboard:</strong>
-            Displays waste statistics, collection status,
-            department details and identification history.
-        </li>
-
-        <li>
-            <strong>PDF and Excel Reports:</strong>
-            Generates downloadable reports for waste records
-            and management activities.
-        </li>
-
-        <li>
-            <strong>Role-Based Login:</strong>
-            Provides separate access for staff, collectors
-            and administrators.
-        </li>
-    </ul>
-</section>
-
-<section class="card">
-    <h2>Technologies Used</h2>
-    <ul>
-        <li>Python</li>
-        <li>Flask Framework</li>
-        <li>HTML, CSS and JavaScript</li>
-        <li>SQLite Database</li>
-        <li>Google Gemini AI API</li>
-        <li>QR Code Generation</li>
-        <li>ReportLab for PDF Reports</li>
-        <li>OpenPyXL for Excel Reports</li>
-    </ul>
-</section>
-
-<section class="card">
-    <h2>Safety and Reliability</h2>
-    <p>
-        AI image identification provides suggestions based on the
-        visible appearance of an item. It cannot determine whether
-        an item is contaminated or infectious. All biomedical waste
-        segregation decisions must be verified by trained staff
-        according to applicable biomedical waste regulations and
-        facility procedures.
-    </p>
-</section>
-
-<section class="card">
-    <h2>Designed &amp; Developed by Harsha KN</h2>
-    <p>Smart Medical Waste Management System</p>
-</section>
+<p>Smart Medical Waste Management and Collection System</p>
 
 {% endblock %}
