@@ -8,3 +8,4 @@ scikit-learn
 pandas
 Pillow
 requests
+psycopg[binary]>=3.2,<4.0

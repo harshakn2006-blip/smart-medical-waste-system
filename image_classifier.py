@@ -6,7 +6,6 @@ import requests
 
 GEMINI_MODEL = "gemini-3.5-flash"
 
-
 def identify_waste_image(image_bytes, mime_type):
     api_key = os.environ.get("GEMINI_API_KEY")
 
